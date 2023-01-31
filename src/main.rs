@@ -13,28 +13,12 @@ struct Cli {
 }
 
 
-trait SendStumili {
-    fn name(&self) -> String;
-
-    fn url(&self, stimuli: &str, strength: u8) -> String {
-        format!("https://app.pavlok.com/api/v1/{}/{}", stimuli, strength)
-    }
-
-    fn send(&self, token: &str, name: &str) -> Result<StimuliResponse, reqwest::Error> {
-        Ok(Client::new()
-           .post(self.url(name))
-           .query(&[ ("access_token", token), ("reason", &self.reason)])
-           .send()?
-           .json::<StimuliResponse>()?)
-    }
-}
-
 #[derive(Args)]
 #[derive(Debug)]
 struct Stimuli {
     #[arg(default_value_t = 85)]
     strength: u8,
-    #[arg(default_value_t = ("Gotcha".to_string()))]
+    #[arg(default_value_t = String::from("Gotcha"))]
     reason: String,
 }
 
@@ -46,7 +30,7 @@ struct Stimuli4 {
         value_parser = clap::value_parser!(u8).range(1..=4),
     )]
     strength: u8,
-    #[arg(default_value_t = ("Gotcha".to_string()))]
+    #[arg(default_value_t = String::from("Gotcha"))]
     reason: String,
 }
 
