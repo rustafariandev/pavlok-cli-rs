@@ -1,6 +1,5 @@
 use clap::{Args, Parser, Subcommand};
-use serde::{Serialize, Deserialize};
-use reqwest::blocking::Client;
+use pavlok;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -34,41 +33,6 @@ struct Stimuli4 {
     reason: String,
 }
 
-
-#[derive(Debug, Serialize, Deserialize)]
-struct StimuliResponse {
-    success: bool,
-    id: String,
-}
-
-impl Stimuli4 {
-    fn url(&self, stimili: &str) -> String {
-        format!("https://app.pavlok.com/api/v1/{}/{}", stimili, self.strength)
-    }
-
-    fn send(&self, token: &str, name: &str) -> Result<StimuliResponse, reqwest::Error> {
-        Ok(Client::new()
-           .post(self.url(name))
-           .query(&[ ("access_token", token), ("reason", &self.reason)])
-           .send()?
-           .json::<StimuliResponse>()?)
-    }
-}
-
-impl Stimuli {
-    fn url(&self, stimili: &str) -> String {
-        format!("https://app.pavlok.com/api/v1/{}/{}", stimili, self.strength)
-    }
-
-    fn send(&self, token: &str, name: &str) -> Result<StimuliResponse, reqwest::Error> {
-        Ok(Client::new()
-           .post(self.url(name))
-           .query(&[ ("access_token", token), ("reason", &self.reason)])
-           .send()?
-           .json::<StimuliResponse>()?)
-    }
-}
-
 #[derive(Debug)]
 #[derive(Subcommand)]
 enum Commands {
@@ -84,26 +48,24 @@ enum Commands {
 
 fn main() {
     let cli = Cli::parse();
-
+    let client = pavlok::blocking::Client::new(cli.access_token);
     let result =  match &cli.command {
         Commands::Zap(msg) => {
-            msg.send(&cli.access_token, "shock")
+            client.shock(msg.strength, &msg.reason)
         },
         Commands::Beep(msg) => {
-            msg.send(&cli.access_token, "beep")
+            client.beep(msg.strength, &msg.reason)
         },
         Commands::Vibrate(msg) => {
-            msg.send(&cli.access_token, "vibration")
+            client.vibrate(msg.strength, &msg.reason)
         }
         Commands::Led(msg) => {
-            msg.send(&cli.access_token, "led")
+            client.led(msg.strength, &msg.reason)
         }
     };
 
     match result {
-        Ok(r) => println!("{:?}", r),
-        Err(e) => println!("{:?}", e)
+        Ok(_) => println!("Action send successfully"),
+        Err(e) => println!("An error happened {}", e)
     }
-
-
 }
